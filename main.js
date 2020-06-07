@@ -1,10 +1,24 @@
 const express = require("express");
+const mongoose = require("mongoose");
+require("dotenv/config");
+
+const billsRouter = require("./routes/bills");
 
 const app = express();
-const PORT = 3000;
 
-app.get("/", (req, res) => {
-  return res.send("Hello World");
-});
+// MIDDLEWARES
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use("/bills", billsRouter);
 
-app.listen(PORT, () => console.log(`Listening at: http://localhost:${PORT}`));
+mongoose.connect(
+  process.env.DB_CONNECTION,
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useFindAndModify: false,
+  },
+  () => console.log("connected to DB")
+);
+
+app.listen(3000);
