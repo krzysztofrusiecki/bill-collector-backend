@@ -1,27 +1,40 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
-const Joi = require("@hapi/joi");
-
-const schema = Joi.object({
-  username: Joi.string().min(7).max(255).required(),
-  email: Joi.string().min(7).max(255).required().email(),
-  password: Joi.string().min(7).max(255).required(),
-});
+const jwt = require("jsonwebtoken");
 
 const User = require("../models/User");
+const { registerValidation, loginValidation } = require("../validation.js");
 
-const userLogin = (req, res) => {};
+const userLogin = async (req, res) => {
+  const { email, password } = req.body;
+  const { error } = loginValidation(req.body);
+  if (error) return res.status(400).json({ message: error.details[0].message });
+
+  let user = await User.findOne({ email });
+  if (!user) {
+    return res.status(400).json({ message: "Email is wrong" });
+  }
+
+  const validPassword = await bcrypt.compare(password, user.password);
+  if (!validPassword) {
+    return res.status(400).json({ message: "password is wrong" });
+  }
+
+  // create a token
+  const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
+  res.header("auth-token", token).json({ token });
+};
 
 const userLogout = (req, res) => {};
 
 const userRegister = async (req, res) => {
   const { username, email, password } = req.body;
-  const { error } = schema.validate(req.body);
-  if (error) res.status(400).json({ message: error.details[0].message });
+  const { error } = registerValidation(req.body);
+  if (error) return res.status(400).json({ message: error.details[0].message });
 
   let user = await User.findOne({ email });
   if (user) {
-    res
+    return res
       .status(400)
       .json({ message: "That email already exists in our system" });
   } else {
@@ -31,15 +44,9 @@ const userRegister = async (req, res) => {
       password,
     });
   }
-
-  try {
-    user.password = await bcrypt.hash(user.password, 10);
-    const newUser = await user.save();
-    res.status(201).json(newUser);
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({ message: error });
-  }
+  user.password = await bcrypt.hash(user.password, 10);
+  const newUser = await user.save();
+  return res.status(201).json({ _id: newUser._id });
 };
 
 module.exports = {
