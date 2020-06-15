@@ -22,7 +22,7 @@ const userLogin = async (req, res) => {
 
   // create a token
   const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
-  res.header("auth-token", token).json({ token });
+  res.json({ accessToken: token });
 };
 
 const userLogout = (req, res) => {};

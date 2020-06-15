@@ -25,6 +25,11 @@ const billSchema = new mongoose.Schema(
       type: [String],
       required: false,
     },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   {
     versionKey: false, // set to false then it wont create in mongodb

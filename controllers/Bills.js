@@ -1,10 +1,20 @@
 const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
 
 const Bill = require("../models/Bill");
 
 const getAllBills = async (req, res) => {
+  let userId;
+  jwt.verify(req.token, process.env.TOKEN_SECRET, async (err, authData) => {
+    if (err) {
+      return res.sendStatus(403).json({ message: err });
+    } else {
+      userId = authData._id;
+    }
+  });
+
   try {
-    const bills = await Bill.find();
+    const bills = await Bill.find({ userId });
     res.status(200).json(bills);
   } catch (err) {
     console.log(err);
@@ -13,9 +23,18 @@ const getAllBills = async (req, res) => {
 };
 
 const getOneBill = async (req, res) => {
+  let userId;
+  jwt.verify(req.token, process.env.TOKEN_SECRET, async (err, authData) => {
+    if (err) {
+      return res.sendStatus(403).json({ message: err });
+    } else {
+      userId = authData._id;
+    }
+  });
+
   const id = req.params.id;
   try {
-    const bill = await Bill.findById(id);
+    const bill = await Bill.findOne({ _id: id, userId });
     res.status(200).json(bill);
   } catch (err) {
     console.log(err);
@@ -24,6 +43,15 @@ const getOneBill = async (req, res) => {
 };
 
 const postOneBill = async (req, res) => {
+  let userId;
+  jwt.verify(req.token, process.env.TOKEN_SECRET, async (err, authData) => {
+    if (err) {
+      return res.sendStatus(403).json({ message: err });
+    } else {
+      userId = authData._id;
+    }
+  });
+
   const { shop, price, date, tags } = req.body;
   const bill = new Bill({
     shop: shop,
@@ -33,6 +61,7 @@ const postOneBill = async (req, res) => {
     },
     date: date,
     tags: [...tags],
+    userId: userId,
   });
   try {
     const savedBill = await bill.save();
@@ -44,9 +73,18 @@ const postOneBill = async (req, res) => {
 };
 
 const deleteOneBill = async (req, res) => {
+  let userId;
+  jwt.verify(req.token, process.env.TOKEN_SECRET, async (err, authData) => {
+    if (err) {
+      return res.sendStatus(403).json({ message: err });
+    } else {
+      userId = authData._id;
+    }
+  });
+
   const id = req.params.id;
   try {
-    const deletedBill = await Bill.findByIdAndRemove(id);
+    const deletedBill = await Bill.findOneAndRemove({ _id: id, userId });
     res.status(200).json(deletedBill);
   } catch (err) {
     console.log(err);
@@ -55,10 +93,21 @@ const deleteOneBill = async (req, res) => {
 };
 
 const updateOneBill = async (req, res) => {
+  let userId;
+  jwt.verify(req.token, process.env.TOKEN_SECRET, async (err, authData) => {
+    if (err) {
+      return res.sendStatus(403).json({ message: err });
+    } else {
+      userId = authData._id;
+    }
+  });
+
   const id = req.params.id;
   const body = req.body;
   try {
-    const updatedBill = await Bill.findOneAndUpdate(id, body, { new: true });
+    const updatedBill = await Bill.findOneAndUpdate({ _id: id, userId }, body, {
+      new: true,
+    });
     res.status(200).json(updatedBill);
   } catch (err) {
     console.log(err);
